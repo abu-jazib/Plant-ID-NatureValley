@@ -11,7 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import sharp from 'sharp'; // User needs to install sharp: npm install sharp
+import sharp from 'sharp';
 
 const TARGET_IMAGE_SIZE_BYTES = 1024 * 1024; // 1MB
 
@@ -54,70 +54,40 @@ export type IdentifyPlantFromImageOutput = z.infer<typeof IdentifyPlantFromImage
 
 
 export async function identifyPlantFromImage(input: IdentifyPlantFromImageInput): Promise<IdentifyPlantFromImageOutput> {
-  const photoDataUriLength = input.photoDataUri ? input.photoDataUri.length : 0;
-  console.log(`[Flow Entry] identifyPlantFromImage: Received request. Original photoDataUri length: ${photoDataUriLength}.`);
-  if (photoDataUriLength > 0 && photoDataUriLength <= 200) { 
-    console.log(`[Flow Detail] identifyPlantFromImage: Original photoDataUri (short): ${input.photoDataUri}`);
-  } else if (photoDataUriLength > 200) { 
-    console.log(`[Flow Detail] identifyPlantFromImage: Original photoDataUri (prefix): ${input.photoDataUri.substring(0,100)}... (Total length: ${photoDataUriLength})`);
-  } else {
-    console.log(`[Flow Detail] identifyPlantFromImage: Original photoDataUri is empty or undefined.`);
-  }
-
   let finalPhotoDataUri = input.photoDataUri;
 
   if (input.photoDataUri) {
     const parsedInput = parseDataUri(input.photoDataUri);
     if (parsedInput) {
-      console.log(`[ImageResize] identifyPlantFromImage: Original image binary size: ${parsedInput.buffer.length} bytes. Target: ${TARGET_IMAGE_SIZE_BYTES} bytes.`);
       if (parsedInput.buffer.length > TARGET_IMAGE_SIZE_BYTES) {
-        console.log('[ImageResize] identifyPlantFromImage: Image exceeds target size. Attempting to resize...');
         try {
           const resizedBuffer = await sharp(parsedInput.buffer)
             .resize({ width: 1280, height: 1280, fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 75 }) // Output as JPEG for better compression
+            .jpeg({ quality: 75 })
             .toBuffer();
           finalPhotoDataUri = `data:image/jpeg;base64,${resizedBuffer.toString('base64')}`;
-          console.log(`[ImageResize] identifyPlantFromImage: Image resized successfully. New binary size: ${resizedBuffer.length} bytes. New data URI length: ${finalPhotoDataUri.length}`);
         } catch (resizeError: any) {
-          console.error(`[ImageResize CRITICAL] identifyPlantFromImage: Error during image resizing: ${resizeError.message}. Using original image.`, resizeError);
+          console.error(`Error during image resizing for plant identification: ${resizeError.message}. Using original image.`);
+          // Proceed with original image if resize fails
         }
-      } else {
-        console.log('[ImageResize] identifyPlantFromImage: Image size is within limits. Using original image.');
       }
-    } else {
-      console.warn('[ImageResize] identifyPlantFromImage: Invalid data URI format. Skipping resize.');
     }
   }
   
   const flowInput = { ...input, photoDataUri: finalPhotoDataUri };
 
   try {
-    console.log(`[Flow Action] identifyPlantFromImage: Calling identifyPlantFromImageFlow with potentially resized image (new data URI length: ${finalPhotoDataUri.length}).`);
     const result = await identifyPlantFromImageFlow(flowInput);
-    console.log('[Flow Success] identifyPlantFromImage: Flow executed successfully. Result commonName:', result?.englishIdentification?.commonName);
     return result;
   } catch (error: any) {
-    const errorMessage = `[Flow CRITICAL ERROR] identifyPlantFromImage: Execution failed in wrapper function. Input photoDataUri length: ${input.photoDataUri?.length ?? 'N/A'}. Potentially resized URI length: ${finalPhotoDataUri?.length ?? 'N/A'}`;
-    console.error(errorMessage);
-    console.error('[Flow CRITICAL ERROR Message]', error.message);
-    if (error.stack) {
-      console.error('[Flow CRITICAL ERROR Stack]', error.stack);
-    }
-    try {
-        const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR Full Object (JSON)]', errorString);
-    } catch (stringifyError: any) {
-        console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
-        console.error('[Flow CRITICAL ERROR Stringify Error]', stringifyError.message);
-    }
-    throw new Error('Server-side analysis failed during plant identification. Please check server logs for details.');
+    console.error('Error in identifyPlantFromImage flow:', error);
+    throw new Error('Server-side analysis failed during plant identification.');
   }
 }
 
 const prompt = ai.definePrompt({
   name: 'identifyPlantFromImagePrompt',
-  input: {schema: IdentifyPlantFromImageInputSchema}, // Stays the same, as resizing happens before this
+  input: {schema: IdentifyPlantFromImageInputSchema},
   output: {schema: IdentifyPlantFromImageOutputSchema},
   prompt: `You are an expert botanist specializing in plant identification.
 You will use the image to identify the plant species.
@@ -140,17 +110,14 @@ Photo: {{media url=photoDataUri}}
 const identifyPlantFromImageFlow = ai.defineFlow(
   {
     name: 'identifyPlantFromImageFlow',
-    inputSchema: IdentifyPlantFromImageInputSchema, // Input here is after potential resizing
+    inputSchema: IdentifyPlantFromImageInputSchema,
     outputSchema: IdentifyPlantFromImageOutputSchema,
   },
-  async (flowInput: IdentifyPlantFromImageInput) => { // Explicitly type flowInput
-    const {output} = await prompt(flowInput); // Use potentially modified photoDataUri from flowInput
+  async (flowInput: IdentifyPlantFromImageInput) => {
+    const {output} = await prompt(flowInput);
     if (!output) {
-      console.error('[CRITICAL FlowInternal] identifyPlantFromImageFlow: AI model did not return an output.');
       throw new Error('AI model did not return an output for plant identification.');
     }
-    console.log(`[DEBUG FlowInternal] identifyPlantFromImageFlow: Output obtained. Preview (first 100 chars): ${JSON.stringify(output)?.substring(0,100)}`);
     return output;
   }
 );
-

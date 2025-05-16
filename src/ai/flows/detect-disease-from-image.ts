@@ -12,7 +12,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import sharp from 'sharp'; // User needs to install sharp: npm install sharp
+import sharp from 'sharp';
 
 const TARGET_IMAGE_SIZE_BYTES = 1024 * 1024; // 1MB
 
@@ -45,76 +45,40 @@ const DetectDiseaseFromImageOutputSchema = z.object({
 export type DetectDiseaseFromImageOutput = z.infer<typeof DetectDiseaseFromImageOutputSchema>;
 
 export async function detectDiseaseFromImage(input: DetectDiseaseFromImageInput): Promise<DetectDiseaseFromImageOutput> {
-  const leafImageDataUriLength = input.leafImageDataUri ? input.leafImageDataUri.length : 0;
-  console.log(`[Flow Entry] detectDiseaseFromImage: Received request. Original leafImageDataUri length: ${leafImageDataUriLength}, plantSpecies: ${input.plantSpecies}.`);
-  if (leafImageDataUriLength > 0 && leafImageDataUriLength <= 200) {
-    console.log(`[Flow Detail] detectDiseaseFromImage: Original leafImageDataUri (short): ${input.leafImageDataUri}`);
-  } else if (leafImageDataUriLength > 200) {
-    console.log(`[Flow Detail] detectDiseaseFromImage: Original leafImageDataUri (prefix): ${input.leafImageDataUri.substring(0,100)}... (Total length: ${leafImageDataUriLength})`);
-  } else {
-    console.log(`[Flow Detail] detectDiseaseFromImage: Original leafImageDataUri is empty or undefined.`);
-  }
-  
   let finalLeafImageDataUri = input.leafImageDataUri;
 
   if (input.leafImageDataUri) {
     const parsedInput = parseDataUri(input.leafImageDataUri);
     if (parsedInput) {
-      console.log(`[ImageResize] detectDiseaseFromImage: Original image binary size: ${parsedInput.buffer.length} bytes. Target: ${TARGET_IMAGE_SIZE_BYTES} bytes.`);
       if (parsedInput.buffer.length > TARGET_IMAGE_SIZE_BYTES) {
-        console.log('[ImageResize] detectDiseaseFromImage: Image exceeds target size. Attempting to resize...');
         try {
           const resizedBuffer = await sharp(parsedInput.buffer)
             .resize({ width: 1280, height: 1280, fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality: 75 }) // Output as JPEG
+            .jpeg({ quality: 75 })
             .toBuffer();
           finalLeafImageDataUri = `data:image/jpeg;base64,${resizedBuffer.toString('base64')}`;
-          console.log(`[ImageResize] detectDiseaseFromImage: Image resized successfully. New binary size: ${resizedBuffer.length} bytes. New data URI length: ${finalLeafImageDataUri.length}`);
         } catch (resizeError: any) {
-          console.error(`[ImageResize CRITICAL] detectDiseaseFromImage: Error during image resizing: ${resizeError.message}. Using original image.`, resizeError);
+          console.error(`Error during image resizing for disease detection (plant: ${input.plantSpecies}): ${resizeError.message}. Using original image.`);
+          // Proceed with original image if resize fails
         }
-      } else {
-        console.log('[ImageResize] detectDiseaseFromImage: Image size is within limits. Using original image.');
       }
-    } else {
-      console.warn('[ImageResize] detectDiseaseFromImage: Invalid data URI format. Skipping resize.');
     }
   }
 
   const flowInput = { ...input, leafImageDataUri: finalLeafImageDataUri };
   
   try {
-    console.log(`[Flow Action] detectDiseaseFromImage: Calling detectDiseaseFromImageFlow with potentially resized image (new data URI length: ${finalLeafImageDataUri.length}).`);
     const result = await detectDiseaseFromImageFlow(flowInput);
-    console.log('[Flow Success] detectDiseaseFromImage: Flow executed successfully. Disease detected:', result?.diseaseDetected);
     return result;
   } catch (error: any) {
-    const errorMessage = `[Flow CRITICAL ERROR] detectDiseaseFromImage: Execution failed in wrapper function.`;
-    console.error(errorMessage);
-    console.error(`[Flow CRITICAL ERROR Input] plantSpecies: ${input.plantSpecies}, original leafImageDataUri length: ${input.leafImageDataUri?.length ?? 'N/A'}, potentially resized URI length: ${finalLeafImageDataUri?.length ?? 'N/A'}`);
-    if (input.leafImageDataUri && input.leafImageDataUri.length <=200) {
-        console.error(`[Flow CRITICAL ERROR Input Detail] original leafImageDataUri (short): ${input.leafImageDataUri}`);
-    } else if (input.leafImageDataUri) {
-        console.error(`[Flow CRITICAL ERROR Input Detail] original leafImageDataUri (prefix): ${input.leafImageDataUri.substring(0,100)}...`);
-    }
-    console.error('[Flow CRITICAL ERROR Message]', error.message);
-    if (error.stack) {
-      console.error('[Flow CRITICAL ERROR Stack]', error.stack);
-    }
-    try {
-        const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR Full Object (JSON)]', errorString);
-    } catch (stringifyError: any) {
-        console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
-        console.error('[Flow CRITICAL ERROR Stringify Error]', stringifyError.message);
-    }
-    throw new Error(`Server-side analysis failed during disease detection. Please check server logs for details.`);
+    console.error(`Error in detectDiseaseFromImage flow for plant ${input?.plantSpecies}:`, error);
+    throw new Error(`Server-side analysis failed during disease detection.`);
   }
 }
 
 const prompt = ai.definePrompt({
   name: 'detectDiseaseFromImagePrompt',
-  input: {schema: DetectDiseaseFromImageInputSchema}, // Stays the same
+  input: {schema: DetectDiseaseFromImageInputSchema},
   output: {schema: DetectDiseaseFromImageOutputSchema},
   prompt: `You are an expert in plant pathology. Analyze the provided image of a plant leaf and detect potential diseases or abnormalities.
 
@@ -132,17 +96,14 @@ Provide the following information in the specified JSON structure:
 const detectDiseaseFromImageFlow = ai.defineFlow(
   {
     name: 'detectDiseaseFromImageFlow',
-    inputSchema: DetectDiseaseFromImageInputSchema, // Input here is after potential resizing
+    inputSchema: DetectDiseaseFromImageInputSchema,
     outputSchema: DetectDiseaseFromImageOutputSchema,
   },
-  async (flowInput: DetectDiseaseFromImageInput) => { // Explicitly type flowInput
-    const {output} = await prompt(flowInput); // Use potentially modified leafImageDataUri
+  async (flowInput: DetectDiseaseFromImageInput) => {
+    const {output} = await prompt(flowInput);
     if (!output) {
-      console.error('[CRITICAL FlowInternal] detectDiseaseFromImageFlow: AI model did not return an output.');
       throw new Error('AI model did not return an output for disease detection.');
     }
-    console.log(`[DEBUG FlowInternal] detectDiseaseFromImageFlow: Output obtained. Preview (first 100 chars): ${JSON.stringify(output)?.substring(0,100)}`);
     return output;
   }
 );
-

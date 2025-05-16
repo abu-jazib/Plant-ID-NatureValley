@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Suggests treatments for plant diseases in English and Urdu.
@@ -26,7 +27,27 @@ const SuggestPlantTreatmentOutputSchema = z.object({
 export type SuggestPlantTreatmentOutput = z.infer<typeof SuggestPlantTreatmentOutputSchema>;
 
 export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): Promise<SuggestPlantTreatmentOutput> {
-  return suggestPlantTreatmentFlow(input);
+  console.log(`[Flow Entry] suggestPlantTreatment: Received request. plantSpecies: ${input.plantSpecies}, diseaseDescription length: ${input.diseaseDescription.length}, diseaseDescriptionUrdu length: ${input.diseaseDescriptionUrdu ? input.diseaseDescriptionUrdu.length : 'N/A'}.`);
+  
+  try {
+    console.log(`[Flow Action] suggestPlantTreatment: Calling suggestPlantTreatmentFlow.`);
+    const result = await suggestPlantTreatmentFlow(input);
+    console.log('[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length:', result?.suggestedSolutions?.length);
+    return result;
+  } catch (error: any) {
+    console.error(`[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed. Input: plantSpecies: ${input.plantSpecies}, diseaseDescription length: ${input.diseaseDescription.length}.`);
+    console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Error Message:', error.message);
+    if (error.stack) {
+      console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Stack Trace:', error.stack);
+    }
+    try {
+        const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Full Error Object (JSON):', errorString);
+    } catch (stringifyError) {
+        console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Could not stringify full error object. Original error object:', error);
+    }
+    throw new Error('Server-side analysis failed during treatment suggestion. Please check server logs for details.');
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -56,6 +77,9 @@ const suggestPlantTreatmentFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI model did not return an output for treatment suggestion.');
+    }
+    return output;
   }
 );

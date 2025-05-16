@@ -1,3 +1,4 @@
+
 // src/ai/flows/identify-plant-from-image.ts
 'use server';
 /**
@@ -40,23 +41,37 @@ export type IdentifyPlantFromImageOutput = z.infer<typeof IdentifyPlantFromImage
 
 
 export async function identifyPlantFromImage(input: IdentifyPlantFromImageInput): Promise<IdentifyPlantFromImageOutput> {
-  try {
-    const photoDataUriLength = input.photoDataUri ? input.photoDataUri.length : 0;
-    console.log(`[Flow Call] identifyPlantFromImage with input photoDataUri length: ${photoDataUriLength}`);
-    if (photoDataUriLength > 100) {
-        console.log('[Flow Call Detail] photoDataUri starts with:', input.photoDataUri.substring(0, 100) + '...');
-    } else if (photoDataUriLength > 0) {
-        console.log('[Flow Call Detail] photoDataUri:', input.photoDataUri);
-    } else {
-        console.log('[Flow Call Detail] photoDataUri is empty or undefined.');
-    }
+  const photoDataUriLength = input.photoDataUri ? input.photoDataUri.length : 0;
+  console.log(`[Flow Entry] identifyPlantFromImage: Received request. photoDataUri length: ${photoDataUriLength}.`);
+  // Shorten log for very long data URIs to avoid cluttering logs, but confirm it's received.
+  if (photoDataUriLength > 0 && photoDataUriLength <= 200) { // Log short URIs
+    console.log(`[Flow Detail] identifyPlantFromImage: photoDataUri (short): ${input.photoDataUri}`);
+  } else if (photoDataUriLength > 200) { // Log prefix for long URIs
+    console.log(`[Flow Detail] identifyPlantFromImage: photoDataUri (prefix): ${input.photoDataUri.substring(0,100)}... (Total length: ${photoDataUriLength})`);
+  } else {
+    console.log(`[Flow Detail] identifyPlantFromImage: photoDataUri is empty or undefined.`);
+  }
 
+  try {
+    console.log(`[Flow Action] identifyPlantFromImage: Calling identifyPlantFromImageFlow.`);
     const result = await identifyPlantFromImageFlow(input);
-    console.log('[Flow Success] identifyPlantFromImage completed.');
+    console.log('[Flow Success] identifyPlantFromImage: Flow executed successfully. Result commonName:', result?.englishIdentification?.commonName);
     return result;
-  } catch (error) {
-    console.error('[Flow Error] identifyPlantFromImage failed:', error);
-    throw new Error(`Failed in identifyPlantFromImage flow: ${error instanceof Error ? error.message : String(error)}`);
+  } catch (error: any) {
+    console.error(`[Flow CRITICAL ERROR] identifyPlantFromImage: Execution failed. Input photoDataUri length: ${photoDataUriLength}.`);
+    console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Error Message:', error.message);
+    if (error.stack) {
+      console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Stack Trace:', error.stack);
+    }
+    // Attempt to stringify the error object for more details, handling circular references
+    try {
+        const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Full Error Object (JSON):', errorString);
+    } catch (stringifyError) {
+        console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Could not stringify full error object. Original error object:', error);
+    }
+    // It's important to throw an error that the client can understand as a server failure
+    throw new Error('Server-side analysis failed during plant identification. Please check server logs for details.');
   }
 }
 

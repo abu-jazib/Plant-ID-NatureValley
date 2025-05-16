@@ -9,10 +9,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle 
 import { Menu, X } from 'lucide-react';
 
 const NavLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/team', label: 'Our Team' },
-  { href: '/blogs', label: 'Blogs' },
-  { href: '/contact', label: 'Contact' },
+  { href: 'https://naturevalley.com.pk/', label: 'Home' },
+  { href: 'https://naturevalley.com.pk/team', label: 'Our Team' },
+  { href: 'https://naturevalley.com.pk/blogs', label: 'Blogs' },
+  { href: 'https://naturevalley.com.pk/contact', label: 'Contact' },
 ];
 
 export function Header() {

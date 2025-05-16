@@ -1,4 +1,6 @@
-// 'use server';
+
+// src/ai/flows/detect-disease-from-image.ts
+'use server';
 
 /**
  * @fileOverview Detects diseases from an image of a plant leaf.
@@ -7,8 +9,6 @@
  * - DetectDiseaseFromImageInput - The input type for the detectDiseaseFromImage function.
  * - DetectDiseaseFromImageOutput - The return type for the detectDiseaseFromImage function.
  */
-
-'use server';
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
@@ -32,23 +32,34 @@ const DetectDiseaseFromImageOutputSchema = z.object({
 export type DetectDiseaseFromImageOutput = z.infer<typeof DetectDiseaseFromImageOutputSchema>;
 
 export async function detectDiseaseFromImage(input: DetectDiseaseFromImageInput): Promise<DetectDiseaseFromImageOutput> {
+  const leafImageDataUriLength = input.leafImageDataUri ? input.leafImageDataUri.length : 0;
+  console.log(`[Flow Entry] detectDiseaseFromImage: Received request. leafImageDataUri length: ${leafImageDataUriLength}, plantSpecies: ${input.plantSpecies}.`);
+  if (leafImageDataUriLength > 0 && leafImageDataUriLength <= 200) {
+    console.log(`[Flow Detail] detectDiseaseFromImage: leafImageDataUri (short): ${input.leafImageDataUri}`);
+  } else if (leafImageDataUriLength > 200) {
+    console.log(`[Flow Detail] detectDiseaseFromImage: leafImageDataUri (prefix): ${input.leafImageDataUri.substring(0,100)}... (Total length: ${leafImageDataUriLength})`);
+  } else {
+    console.log(`[Flow Detail] detectDiseaseFromImage: leafImageDataUri is empty or undefined.`);
+  }
+  
   try {
-    const leafImageDataUriLength = input.leafImageDataUri ? input.leafImageDataUri.length : 0;
-    console.log(`[Flow Call] detectDiseaseFromImage with input leafImageDataUri length: ${leafImageDataUriLength}, plantSpecies: ${input.plantSpecies}`);
-    if (leafImageDataUriLength > 100) {
-        console.log('[Flow Call Detail] leafImageDataUri starts with:', input.leafImageDataUri.substring(0, 100) + '...');
-    } else if (leafImageDataUriLength > 0) {
-        console.log('[Flow Call Detail] leafImageDataUri:', input.leafImageDataUri);
-    } else {
-        console.log('[Flow Call Detail] leafImageDataUri is empty or undefined.');
-    }
-    
+    console.log(`[Flow Action] detectDiseaseFromImage: Calling detectDiseaseFromImageFlow.`);
     const result = await detectDiseaseFromImageFlow(input);
-    console.log('[Flow Success] detectDiseaseFromImage completed.');
+    console.log('[Flow Success] detectDiseaseFromImage: Flow executed successfully. Disease detected:', result?.diseaseDetected);
     return result;
-  } catch (error) {
-    console.error('[Flow Error] detectDiseaseFromImage failed:', error);
-    throw new Error(`Failed in detectDiseaseFromImage flow: ${error instanceof Error ? error.message : String(error)}`);
+  } catch (error: any) {
+    console.error(`[Flow CRITICAL ERROR] detectDiseaseFromImage: Execution failed. Input leafImageDataUri length: ${leafImageDataUriLength}, plantSpecies: ${input.plantSpecies}.`);
+    console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Error Message:', error.message);
+    if (error.stack) {
+      console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Stack Trace:', error.stack);
+    }
+    try {
+        const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
+        console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Full Error Object (JSON):', errorString);
+    } catch (stringifyError) {
+        console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Could not stringify full error object. Original error object:', error);
+    }
+    throw new Error(`Server-side analysis failed during disease detection. Please check server logs for details.`);
   }
 }
 

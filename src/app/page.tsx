@@ -3,8 +3,10 @@
 
 import { NatureValleyLogoIcon } from "@/components/icons/NatureValleyLogoIcon";
 import Footer from "@/components/layout/Footer"; 
-import { Header } from "@/components/layout/Header"; // Import the new Header
-import { LeafWiseApp } from "@/components/leafwise/LeafWiseApp";
+// Updated import path for Header
+import { Header } from "../components/layout/Header"; 
+// Updated import path for LeafWiseApp
+import { LeafWiseApp } from "../components/leafwise/LeafWiseApp";
 import "@/public/assets/css/style.css"
 
 

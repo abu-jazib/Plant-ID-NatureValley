@@ -43,10 +43,9 @@ export type IdentifyPlantFromImageOutput = z.infer<typeof IdentifyPlantFromImage
 export async function identifyPlantFromImage(input: IdentifyPlantFromImageInput): Promise<IdentifyPlantFromImageOutput> {
   const photoDataUriLength = input.photoDataUri ? input.photoDataUri.length : 0;
   console.log(`[Flow Entry] identifyPlantFromImage: Received request. photoDataUri length: ${photoDataUriLength}.`);
-  // Shorten log for very long data URIs to avoid cluttering logs, but confirm it's received.
-  if (photoDataUriLength > 0 && photoDataUriLength <= 200) { // Log short URIs
+  if (photoDataUriLength > 0 && photoDataUriLength <= 200) { 
     console.log(`[Flow Detail] identifyPlantFromImage: photoDataUri (short): ${input.photoDataUri}`);
-  } else if (photoDataUriLength > 200) { // Log prefix for long URIs
+  } else if (photoDataUriLength > 200) { 
     console.log(`[Flow Detail] identifyPlantFromImage: photoDataUri (prefix): ${input.photoDataUri.substring(0,100)}... (Total length: ${photoDataUriLength})`);
   } else {
     console.log(`[Flow Detail] identifyPlantFromImage: photoDataUri is empty or undefined.`);
@@ -58,19 +57,19 @@ export async function identifyPlantFromImage(input: IdentifyPlantFromImageInput)
     console.log('[Flow Success] identifyPlantFromImage: Flow executed successfully. Result commonName:', result?.englishIdentification?.commonName);
     return result;
   } catch (error: any) {
-    console.error(`[Flow CRITICAL ERROR] identifyPlantFromImage: Execution failed. Input photoDataUri length: ${photoDataUriLength}.`);
-    console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Error Message:', error.message);
+    const errorMessage = `[Flow CRITICAL ERROR] identifyPlantFromImage: Execution failed in wrapper function. Input photoDataUri length: ${photoDataUriLength}.`;
+    console.error(errorMessage);
+    console.error('[Flow CRITICAL ERROR Message]', error.message);
     if (error.stack) {
-      console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Stack Trace:', error.stack);
+      console.error('[Flow CRITICAL ERROR Stack]', error.stack);
     }
-    // Attempt to stringify the error object for more details, handling circular references
     try {
         const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Full Error Object (JSON):', errorString);
-    } catch (stringifyError) {
-        console.error('[Flow CRITICAL ERROR] identifyPlantFromImage: Could not stringify full error object. Original error object:', error);
+        console.error('[Flow CRITICAL ERROR Full Object (JSON)]', errorString);
+    } catch (stringifyError: any) {
+        console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
+        console.error('[Flow CRITICAL ERROR Stringify Error]', stringifyError.message);
     }
-    // It's important to throw an error that the client can understand as a server failure
     throw new Error('Server-side analysis failed during plant identification. Please check server logs for details.');
   }
 }
@@ -106,20 +105,10 @@ const identifyPlantFromImageFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
     if (!output) {
+      console.error('[CRITICAL FlowInternal] identifyPlantFromImageFlow: AI model did not return an output.');
       throw new Error('AI model did not return an output for plant identification.');
     }
-    // Add detailed logging for output object before returning
-    console.log(`[DEBUG FlowInternal] identifyPlantFromImageFlow: Output obtained. Type: ${typeof output}. Null/Undefined check: ${output === null || output === undefined}`);
-    if (output) {
-        try {
-            const outputString = JSON.stringify(output);
-            console.log(`[DEBUG FlowInternal] identifyPlantFromImageFlow: JSON.stringify SUCCESS. String length: ${outputString.length}. Preview (first 200 chars): ${outputString.substring(0, 200)}`);
-        } catch (e: any) {
-            console.error(`[CRITICAL DEBUG FlowInternal] identifyPlantFromImageFlow: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
-        }
-    }
-    console.log('[DEBUG FlowInternal] identifyPlantFromImageFlow: Preparing to return output.');
+    console.log(`[DEBUG FlowInternal] identifyPlantFromImageFlow: Output obtained. Preview (first 100 chars): ${JSON.stringify(output)?.substring(0,100)}`);
     return output;
   }
 );
-

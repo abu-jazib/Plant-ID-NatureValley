@@ -48,23 +48,24 @@ export async function detectDiseaseFromImage(input: DetectDiseaseFromImageInput)
     console.log('[Flow Success] detectDiseaseFromImage: Flow executed successfully. Disease detected:', result?.diseaseDetected);
     return result;
   } catch (error: any) {
-    const errorMessage = `[Flow CRITICAL ERROR] detectDiseaseFromImage: Execution failed.`;
+    const errorMessage = `[Flow CRITICAL ERROR] detectDiseaseFromImage: Execution failed in wrapper function.`;
     console.error(errorMessage);
-    console.error(`[Flow CRITICAL ERROR] Input: plantSpecies: ${input.plantSpecies}, leafImageDataUri length: ${input.leafImageDataUri?.length ?? 'N/A'}`);
+    console.error(`[Flow CRITICAL ERROR Input] plantSpecies: ${input.plantSpecies}, leafImageDataUri length: ${input.leafImageDataUri?.length ?? 'N/A'}`);
     if (input.leafImageDataUri && input.leafImageDataUri.length <=200) {
-        console.error(`[Flow CRITICAL ERROR] Input leafImageDataUri (short): ${input.leafImageDataUri}`);
+        console.error(`[Flow CRITICAL ERROR Input Detail] leafImageDataUri (short): ${input.leafImageDataUri}`);
     } else if (input.leafImageDataUri) {
-        console.error(`[Flow CRITICAL ERROR] Input leafImageDataUri (prefix): ${input.leafImageDataUri.substring(0,100)}...`);
+        console.error(`[Flow CRITICAL ERROR Input Detail] leafImageDataUri (prefix): ${input.leafImageDataUri.substring(0,100)}...`);
     }
-    console.error('[Flow CRITICAL ERROR] Error Message:', error.message);
+    console.error('[Flow CRITICAL ERROR Message]', error.message);
     if (error.stack) {
-      console.error('[Flow CRITICAL ERROR] Stack Trace:', error.stack);
+      console.error('[Flow CRITICAL ERROR Stack]', error.stack);
     }
     try {
         const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR] Full Error Object (JSON):', errorString);
-    } catch (stringifyError) {
+        console.error('[Flow CRITICAL ERROR Full Object (JSON)]', errorString);
+    } catch (stringifyError: any) {
         console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
+        console.error('[Flow CRITICAL ERROR Stringify Error]', stringifyError.message);
     }
     throw new Error(`Server-side analysis failed during disease detection. Please check server logs for details.`);
   }
@@ -96,20 +97,10 @@ const detectDiseaseFromImageFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
     if (!output) {
+      console.error('[CRITICAL FlowInternal] detectDiseaseFromImageFlow: AI model did not return an output.');
       throw new Error('AI model did not return an output for disease detection.');
     }
-    // Add detailed logging for output object before returning
-    console.log(`[DEBUG FlowInternal] detectDiseaseFromImageFlow: Output obtained. Type: ${typeof output}. Null/Undefined check: ${output === null || output === undefined}`);
-    if (output) {
-        try {
-            const outputString = JSON.stringify(output);
-            console.log(`[DEBUG FlowInternal] detectDiseaseFromImageFlow: JSON.stringify SUCCESS. String length: ${outputString.length}. Preview (first 200 chars): ${outputString.substring(0, 200)}`);
-        } catch (e: any) {
-            console.error(`[CRITICAL DEBUG FlowInternal] detectDiseaseFromImageFlow: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
-        }
-    }
-    console.log('[DEBUG FlowInternal] detectDiseaseFromImageFlow: Preparing to return output.');
+    console.log(`[DEBUG FlowInternal] detectDiseaseFromImageFlow: Output obtained. Preview (first 100 chars): ${JSON.stringify(output)?.substring(0,100)}`);
     return output;
   }
 );
-

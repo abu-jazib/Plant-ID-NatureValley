@@ -32,41 +32,24 @@ export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): 
   try {
     console.log(`[Flow Action] suggestPlantTreatment: Calling suggestPlantTreatmentFlow.`);
     const result = await suggestPlantTreatmentFlow(input);
-
-    console.log(`[DEBUG] suggestPlantTreatment: Result obtained from AI flow. Type: ${typeof result}. Null/Undefined check: ${result === null || result === undefined}`);
-    if (result) {
-        console.log(`[DEBUG] suggestPlantTreatment: Result English solutions length: ${result.suggestedSolutions?.length}, Urdu solutions length: ${result.suggestedSolutionsUrdu?.length}`);
-        console.log(`[DEBUG] suggestPlantTreatment: Attempting to JSON.stringify the result object for inspection...`);
-        try {
-            const resultString = JSON.stringify(result);
-            console.log(`[DEBUG] suggestPlantTreatment: JSON.stringify SUCCESS. String length: ${resultString.length}. Preview (first 200 chars): ${resultString.substring(0, 200)}`);
-        } catch (e: any) {
-            console.error(`[CRITICAL DEBUG] suggestPlantTreatment: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
-        }
-    } else {
-        console.error('[CRITICAL DEBUG] suggestPlantTreatment: `result` from suggestPlantTreatmentFlow is null or undefined. Throwing error.');
-        throw new Error('AI flow (suggestPlantTreatmentFlow) returned null or undefined result.');
-    }
-    console.log('[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length (re-check):', result?.suggestedSolutions?.length);
-    
-    console.log('[Flow Return] suggestPlantTreatment: Preparing to return result from server action wrapper.');
+    console.log(`[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length: ${result?.suggestedSolutions?.length}`);
     return result;
-
   } catch (error: any) {
-    const errorMessage = `[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed.`;
+    const errorMessage = `[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed in wrapper function.`;
     console.error(errorMessage);
-    console.error(`[Flow CRITICAL ERROR] Input: plantSpecies: ${input.plantSpecies}, diseaseDescription length: ${input.diseaseDescription?.length ?? 'N/A'}, diseaseDescriptionUrdu length: ${input.diseaseDescriptionUrdu?.length ?? 'N/A'}`);
-    console.error('[Flow CRITICAL ERROR] Error Message:', error.message);
+    console.error(`[Flow CRITICAL ERROR Input] plantSpecies: ${input.plantSpecies}, diseaseDescription length: ${input.diseaseDescription?.length ?? 'N/A'}, diseaseDescriptionUrdu length: ${input.diseaseDescriptionUrdu?.length ?? 'N/A'}`);
+    console.error('[Flow CRITICAL ERROR Message]', error.message);
     if (error.stack) {
-      console.error('[Flow CRITICAL ERROR] Stack Trace:', error.stack);
+      console.error('[Flow CRITICAL ERROR Stack]', error.stack);
     }
     try {
         const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR] Full Error Object (JSON):', errorString);
-    } catch (stringifyError) {
+        console.error('[Flow CRITICAL ERROR Full Object (JSON)]', errorString);
+    } catch (stringifyError: any) {
         console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
+        console.error('[Flow CRITICAL ERROR Stringify Error]', stringifyError.message);
     }
-    throw new Error(`Server-side analysis failed during treatment suggestion. Details: ${error.message}`);
+    throw new Error(`Server-side analysis failed during treatment suggestion. Please check server logs for details.`);
   }
 }
 
@@ -98,20 +81,10 @@ const suggestPlantTreatmentFlow = ai.defineFlow(
   async input => {
     const {output} = await prompt(input);
     if (!output) {
+      console.error('[CRITICAL FlowInternal] suggestPlantTreatmentFlow: AI model did not return an output.');
       throw new Error('AI model did not return an output for treatment suggestion.');
     }
-     // Add detailed logging for output object before returning
-    console.log(`[DEBUG FlowInternal] suggestPlantTreatmentFlow: Output obtained. Type: ${typeof output}. Null/Undefined check: ${output === null || output === undefined}`);
-    if (output) {
-        try {
-            const outputString = JSON.stringify(output);
-            console.log(`[DEBUG FlowInternal] suggestPlantTreatmentFlow: JSON.stringify SUCCESS. String length: ${outputString.length}. Preview (first 200 chars): ${outputString.substring(0, 200)}`);
-        } catch (e: any) {
-            console.error(`[CRITICAL DEBUG FlowInternal] suggestPlantTreatmentFlow: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
-        }
-    }
-    console.log('[DEBUG FlowInternal] suggestPlantTreatmentFlow: Preparing to return output.');
+    console.log(`[DEBUG FlowInternal] suggestPlantTreatmentFlow: Output obtained. Preview (first 100 chars): ${JSON.stringify(output)?.substring(0, 100)}`);
     return output;
   }
 );
-

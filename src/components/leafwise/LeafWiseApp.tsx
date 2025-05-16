@@ -89,29 +89,11 @@ export function LeafWiseApp() {
                 diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
               });
 
-              console.log('[LeafWiseApp Debug] Successfully received response from suggestPlantTreatment.');
-              if (treatmentRes) {
-                console.log('[LeafWiseApp Debug] treatmentRes keys:', Object.keys(treatmentRes));
-                console.log('[LeafWiseApp Debug] treatmentRes.suggestedSolutions length:', treatmentRes.suggestedSolutions?.length);
-                console.log('[LeafWiseApp Debug] treatmentRes.preventativeMeasures length:', treatmentRes.preventativeMeasures?.length);
-                console.log('[LeafWiseApp Debug] treatmentRes.suggestedSolutionsUrdu length:', treatmentRes.suggestedSolutionsUrdu?.length);
-                console.log('[LeafWiseApp Debug] treatmentRes.preventativeMeasuresUrdu length:', treatmentRes.preventativeMeasuresUrdu?.length);
-              } else {
-                console.warn('[LeafWiseApp Debug] suggestPlantTreatment returned null or undefined.');
-              }
-              
+              console.log('[LeafWiseApp Debug] Successfully received response from suggestPlantTreatment. Solution preview:', treatmentRes?.suggestedSolutions?.substring(0,100));
               setTreatmentSuggestionResult(treatmentRes);
               toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
             } catch (treatmentError: any) {
               console.error("[LeafWiseApp CRITICAL DEBUG] Error from suggestPlantTreatment call:", treatmentError);
-              console.error("[LeafWiseApp CRITICAL DEBUG] Error message:", treatmentError.message);
-              console.error("[LeafWiseApp CRITICAL DEBUG] Error stack:", treatmentError.stack);
-              try {
-                const errorJson = JSON.stringify(treatmentError, Object.getOwnPropertyNames(treatmentError));
-                console.error("[LeafWiseApp CRITICAL DEBUG] Full treatmentError object (JSON):", errorJson);
-              } catch (e) {
-                console.error("[LeafWiseApp CRITICAL DEBUG] Could not stringify treatmentError object:", treatmentError);
-              }
               const userErrorMessage = treatmentError.message.includes('network') || treatmentError.message.includes('fetch') 
                 ? "A network error occurred while fetching treatment suggestions. Please check your connection or try again."
                 : `Error during treatment suggestion: ${treatmentError.message}`;
@@ -170,4 +152,3 @@ export function LeafWiseApp() {
     </div>
   );
 }
-

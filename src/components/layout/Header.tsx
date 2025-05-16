@@ -5,14 +5,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { NatureValleyLogoIcon } from '@/components/icons/NatureValleyLogoIcon';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Menu, X } from 'lucide-react';
 
 const NavLinks = [
-  { href: 'https://naturevalley.com.pk/', label: 'Home' },
-  { href: 'https://naturevalley.com.pk//team', label: 'Our Team' },
-  { href: 'https://naturevalley.com.pk//blogs', label: 'Blogs' },
-  { href: 'https://naturevalley.com.pk//contact', label: 'Contact' },
+  { href: '/', label: 'Home' },
+  { href: '/team', label: 'Our Team' },
+  { href: '/blogs', label: 'Blogs' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 export function Header() {
@@ -29,7 +29,7 @@ export function Header() {
         <nav className="hidden md:flex space-x-6">
           {NavLinks.map((link) => (
             <Link
-              key={link.href} // Added key prop
+              key={link.href}
               href={link.href}
               className="text-sm font-medium hover:text-primary-foreground/80 transition-colors px-2 py-1 rounded-md"
             >
@@ -49,6 +49,9 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="w-3/4 bg-primary text-primary-foreground p-6 font-sans">
               <div className="flex flex-col h-full">
+                <SheetHeader>
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                </SheetHeader>
                 <div className="flex justify-between items-center mb-8">
                    <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
                       <NatureValleyLogoIcon className="h-10 w-auto text-primary-foreground" />
@@ -62,11 +65,10 @@ export function Header() {
                 </div>
                 <nav className="flex flex-col space-y-4">
                   {NavLinks.map((link) => (
-                    <SheetClose asChild key={link.href}> {/* Added key prop */}
+                    <SheetClose asChild key={link.href}>
                       <Link
                         href={link.href}
                         className="text-lg font-medium hover:bg-primary-foreground/10 transition-colors p-3 rounded-md text-center"
-                        onClick={() => setIsMobileMenuOpen(false)}
                       >
                         {link.label}
                       </Link>

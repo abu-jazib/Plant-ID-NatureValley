@@ -7,7 +7,7 @@ import { detectDiseaseFromImage, type DetectDiseaseFromImageOutput } from "@/ai/
 import { suggestPlantTreatment, type SuggestPlantTreatmentOutput } from "@/ai/flows/suggest-treatment-flow";
 import { ImageUploadSection } from "./ImageUploadSection";
 import { ResultsSection } from "./ResultsSection";
-import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher"; // Added import
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useToast } from "@/hooks/use-toast";
 
 export function LeafWiseApp() {
@@ -19,7 +19,7 @@ export function LeafWiseApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentLoadingStep, setCurrentLoadingStep] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ur">("en"); // Added language state
+  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ur">("en");
   const { toast } = useToast();
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -31,7 +31,6 @@ export function LeafWiseApp() {
         setImageDataUrl(e.target?.result as string);
       };
       reader.readAsDataURL(selectedFile);
-      // Clear previous results when a new file is selected
       setPlantIdResult(null);
       setDiseaseResult(null);
       setTreatmentSuggestionResult(null);
@@ -49,6 +48,8 @@ export function LeafWiseApp() {
       toast({ title: "Error", description: "Please select an image file.", variant: "destructive" });
       return;
     }
+
+    console.log('[Mobile Debug] imageDataUrl length (client-side):', imageDataUrl.length);
 
     setIsLoading(true);
     setError(null);
@@ -80,8 +81,8 @@ export function LeafWiseApp() {
             toast({ title: "Processing...", description: "Generating treatment suggestions." });
             const treatmentRes = await suggestPlantTreatment({
               plantSpecies: idResult.englishIdentification.latinName,
-              diseaseDescription: diseaseRes.likelyCauses, // English description
-              diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu, // Urdu description
+              diseaseDescription: diseaseRes.likelyCauses,
+              diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
             });
             setTreatmentSuggestionResult(treatmentRes);
             toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
@@ -96,7 +97,7 @@ export function LeafWiseApp() {
       }
     } catch (err) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during analysis.";
+      const errorMessage = err instanceof Error ? err.message : "An unexpected response was received from the server.";
       setError(`Error during ${currentLoadingStep || 'analysis'}: ${errorMessage}`);
       toast({ title: "Analysis Failed", description: `Error during ${currentLoadingStep || 'analysis'}: ${errorMessage}`, variant: "destructive" });
     } finally {
@@ -132,7 +133,7 @@ export function LeafWiseApp() {
         error={error}
         isLoading={isLoading}
         currentLoadingStep={currentLoadingStep}
-        language={selectedLanguage} // Pass selected language
+        language={selectedLanguage}
       />
     </div>
   );

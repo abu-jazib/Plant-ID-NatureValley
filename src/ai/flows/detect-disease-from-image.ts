@@ -32,7 +32,24 @@ const DetectDiseaseFromImageOutputSchema = z.object({
 export type DetectDiseaseFromImageOutput = z.infer<typeof DetectDiseaseFromImageOutputSchema>;
 
 export async function detectDiseaseFromImage(input: DetectDiseaseFromImageInput): Promise<DetectDiseaseFromImageOutput> {
-  return detectDiseaseFromImageFlow(input);
+  try {
+    const leafImageDataUriLength = input.leafImageDataUri ? input.leafImageDataUri.length : 0;
+    console.log(`[Flow Call] detectDiseaseFromImage with input leafImageDataUri length: ${leafImageDataUriLength}, plantSpecies: ${input.plantSpecies}`);
+    if (leafImageDataUriLength > 100) {
+        console.log('[Flow Call Detail] leafImageDataUri starts with:', input.leafImageDataUri.substring(0, 100) + '...');
+    } else if (leafImageDataUriLength > 0) {
+        console.log('[Flow Call Detail] leafImageDataUri:', input.leafImageDataUri);
+    } else {
+        console.log('[Flow Call Detail] leafImageDataUri is empty or undefined.');
+    }
+    
+    const result = await detectDiseaseFromImageFlow(input);
+    console.log('[Flow Success] detectDiseaseFromImage completed.');
+    return result;
+  } catch (error) {
+    console.error('[Flow Error] detectDiseaseFromImage failed:', error);
+    throw new Error(`Failed in detectDiseaseFromImage flow: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -60,6 +77,9 @@ const detectDiseaseFromImageFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI model did not return an output for disease detection.');
+    }
+    return output;
   }
 );

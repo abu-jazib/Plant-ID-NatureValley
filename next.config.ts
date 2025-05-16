@@ -16,7 +16,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      }
     ],
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Increased from a potential default of 1MB
+    },
   },
 };
 

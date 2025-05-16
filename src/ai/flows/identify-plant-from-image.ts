@@ -40,7 +40,24 @@ export type IdentifyPlantFromImageOutput = z.infer<typeof IdentifyPlantFromImage
 
 
 export async function identifyPlantFromImage(input: IdentifyPlantFromImageInput): Promise<IdentifyPlantFromImageOutput> {
-  return identifyPlantFromImageFlow(input);
+  try {
+    const photoDataUriLength = input.photoDataUri ? input.photoDataUri.length : 0;
+    console.log(`[Flow Call] identifyPlantFromImage with input photoDataUri length: ${photoDataUriLength}`);
+    if (photoDataUriLength > 100) {
+        console.log('[Flow Call Detail] photoDataUri starts with:', input.photoDataUri.substring(0, 100) + '...');
+    } else if (photoDataUriLength > 0) {
+        console.log('[Flow Call Detail] photoDataUri:', input.photoDataUri);
+    } else {
+        console.log('[Flow Call Detail] photoDataUri is empty or undefined.');
+    }
+
+    const result = await identifyPlantFromImageFlow(input);
+    console.log('[Flow Success] identifyPlantFromImage completed.');
+    return result;
+  } catch (error) {
+    console.error('[Flow Error] identifyPlantFromImage failed:', error);
+    throw new Error(`Failed in identifyPlantFromImage flow: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -73,7 +90,9 @@ const identifyPlantFromImageFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI model did not return an output for plant identification.');
+    }
+    return output;
   }
 );
-

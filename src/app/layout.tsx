@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${montserrat.variable} ${roboto.variable} antialiased`}>
+      <body className={`${montserrat.variable} ${roboto.variable} antialiased`} suppressHydrationWarning>
         {children}
         <Toaster />
       </body>

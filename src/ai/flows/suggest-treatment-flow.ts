@@ -33,6 +33,18 @@ export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): 
     console.log(`[Flow Action] suggestPlantTreatment: Calling suggestPlantTreatmentFlow.`);
     const result = await suggestPlantTreatmentFlow(input);
     console.log('[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length:', result?.suggestedSolutions?.length);
+
+    // Attempt to stringify to see if the object itself is an issue for serialization later by Next.js
+    try {
+      const resultString = JSON.stringify(result);
+      console.log(`[Flow Pre-Return Debug] suggestPlantTreatment: Stringified result length: ${resultString.length}. Contents (first 200 chars): ${resultString.substring(0,200)}`);
+    } catch (stringifyError: any) {
+      console.error(`[Flow CRITICAL ERROR] suggestPlantTreatment: Failed to stringify result before returning. Error: ${stringifyError.message}`);
+      // We might still try to return the original result, or re-throw, depending on how critical this is.
+      // For now, log and proceed to return.
+    }
+    
+    console.log('[Flow Return] suggestPlantTreatment: Preparing to return result to client.');
     return result;
   } catch (error: any) {
     const errorMessage = `[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed.`;
@@ -48,7 +60,7 @@ export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): 
     } catch (stringifyError) {
         console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
     }
-    throw new Error('Server-side analysis failed during treatment suggestion. Please check server logs for details.');
+    throw new Error(`Server-side analysis failed during treatment suggestion. Please check server logs for details.`);
   }
 }
 
@@ -85,3 +97,4 @@ const suggestPlantTreatmentFlow = ai.defineFlow(
     return output;
   }
 );
+

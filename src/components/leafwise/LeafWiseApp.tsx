@@ -49,7 +49,7 @@ export function LeafWiseApp() {
       return;
     }
 
-    console.log('[Mobile Debug] imageDataUrl length (client-side):', imageDataUrl.length);
+    console.log('[LeafWiseApp Debug] imageDataUrl length (client-side):', imageDataUrl.length);
 
     setIsLoading(true);
     setError(null);
@@ -79,13 +79,23 @@ export function LeafWiseApp() {
           if (diseaseRes.diseaseDetected) {
             setCurrentLoadingStep("Suggesting treatment...");
             toast({ title: "Processing...", description: "Generating treatment suggestions." });
-            const treatmentRes = await suggestPlantTreatment({
-              plantSpecies: idResult.englishIdentification.latinName,
-              diseaseDescription: diseaseRes.likelyCauses,
-              diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
-            });
-            setTreatmentSuggestionResult(treatmentRes);
-            toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
+            
+            console.log(`[LeafWiseApp Debug] Preparing to call suggestPlantTreatment. Plant: ${idResult.englishIdentification.latinName}, Disease: ${diseaseRes.likelyCauses}, Disease Urdu: ${diseaseRes.likelyCausesUrdu}`);
+            
+            try {
+              const treatmentRes = await suggestPlantTreatment({
+                plantSpecies: idResult.englishIdentification.latinName,
+                diseaseDescription: diseaseRes.likelyCauses,
+                diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
+              });
+              setTreatmentSuggestionResult(treatmentRes);
+              console.log('[LeafWiseApp Debug] Successfully called suggestPlantTreatment. Result keys:', treatmentRes ? Object.keys(treatmentRes) : 'null');
+              toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
+            } catch (treatmentError: any) {
+              console.error("[LeafWiseApp Debug] Error calling suggestPlantTreatment:", treatmentError.message, treatmentError.stack, treatmentError);
+              setError(`Error during treatment suggestion: ${treatmentError.message}`);
+              toast({ title: "Treatment Suggestion Failed", description: treatmentError.message, variant: "destructive" });
+            }
           }
         } else {
           setError("Plant identified, but Latin name is missing. Disease detection skipped.");
@@ -96,7 +106,7 @@ export function LeafWiseApp() {
         toast({ title: "Identification Failed", description: "Essential plant details are missing from the AI response.", variant: "destructive" });
       }
     } catch (err) {
-      console.error(err);
+      console.error('[LeafWiseApp Debug] Error during main analysis steps:', err);
       const errorMessage = err instanceof Error ? err.message : "An unexpected response was received from the server.";
       setError(`Error during ${currentLoadingStep || 'analysis'}: ${errorMessage}`);
       toast({ title: "Analysis Failed", description: `Error during ${currentLoadingStep || 'analysis'}: ${errorMessage}`, variant: "destructive" });

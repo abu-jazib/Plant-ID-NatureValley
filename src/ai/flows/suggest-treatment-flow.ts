@@ -35,16 +35,18 @@ export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): 
     console.log('[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length:', result?.suggestedSolutions?.length);
     return result;
   } catch (error: any) {
-    console.error(`[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed. Input: plantSpecies: ${input.plantSpecies}, diseaseDescription length: ${input.diseaseDescription.length}.`);
-    console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Error Message:', error.message);
+    const errorMessage = `[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed.`;
+    console.error(errorMessage);
+    console.error(`[Flow CRITICAL ERROR] Input: plantSpecies: ${input.plantSpecies}, diseaseDescription length: ${input.diseaseDescription?.length ?? 'N/A'}, diseaseDescriptionUrdu length: ${input.diseaseDescriptionUrdu?.length ?? 'N/A'}`);
+    console.error('[Flow CRITICAL ERROR] Error Message:', error.message);
     if (error.stack) {
-      console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Stack Trace:', error.stack);
+      console.error('[Flow CRITICAL ERROR] Stack Trace:', error.stack);
     }
     try {
         const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Full Error Object (JSON):', errorString);
+        console.error('[Flow CRITICAL ERROR] Full Error Object (JSON):', errorString);
     } catch (stringifyError) {
-        console.error('[Flow CRITICAL ERROR] suggestPlantTreatment: Could not stringify full error object. Original error object:', error);
+        console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
     }
     throw new Error('Server-side analysis failed during treatment suggestion. Please check server logs for details.');
   }

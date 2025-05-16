@@ -48,16 +48,23 @@ export async function detectDiseaseFromImage(input: DetectDiseaseFromImageInput)
     console.log('[Flow Success] detectDiseaseFromImage: Flow executed successfully. Disease detected:', result?.diseaseDetected);
     return result;
   } catch (error: any) {
-    console.error(`[Flow CRITICAL ERROR] detectDiseaseFromImage: Execution failed. Input leafImageDataUri length: ${leafImageDataUriLength}, plantSpecies: ${input.plantSpecies}.`);
-    console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Error Message:', error.message);
+    const errorMessage = `[Flow CRITICAL ERROR] detectDiseaseFromImage: Execution failed.`;
+    console.error(errorMessage);
+    console.error(`[Flow CRITICAL ERROR] Input: plantSpecies: ${input.plantSpecies}, leafImageDataUri length: ${input.leafImageDataUri?.length ?? 'N/A'}`);
+    if (input.leafImageDataUri && input.leafImageDataUri.length <=200) {
+        console.error(`[Flow CRITICAL ERROR] Input leafImageDataUri (short): ${input.leafImageDataUri}`);
+    } else if (input.leafImageDataUri) {
+        console.error(`[Flow CRITICAL ERROR] Input leafImageDataUri (prefix): ${input.leafImageDataUri.substring(0,100)}...`);
+    }
+    console.error('[Flow CRITICAL ERROR] Error Message:', error.message);
     if (error.stack) {
-      console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Stack Trace:', error.stack);
+      console.error('[Flow CRITICAL ERROR] Stack Trace:', error.stack);
     }
     try {
         const errorString = JSON.stringify(error, Object.getOwnPropertyNames(error));
-        console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Full Error Object (JSON):', errorString);
+        console.error('[Flow CRITICAL ERROR] Full Error Object (JSON):', errorString);
     } catch (stringifyError) {
-        console.error('[Flow CRITICAL ERROR] detectDiseaseFromImage: Could not stringify full error object. Original error object:', error);
+        console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
     }
     throw new Error(`Server-side analysis failed during disease detection. Please check server logs for details.`);
   }

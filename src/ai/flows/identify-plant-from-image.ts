@@ -108,6 +108,18 @@ const identifyPlantFromImageFlow = ai.defineFlow(
     if (!output) {
       throw new Error('AI model did not return an output for plant identification.');
     }
+    // Add detailed logging for output object before returning
+    console.log(`[DEBUG FlowInternal] identifyPlantFromImageFlow: Output obtained. Type: ${typeof output}. Null/Undefined check: ${output === null || output === undefined}`);
+    if (output) {
+        try {
+            const outputString = JSON.stringify(output);
+            console.log(`[DEBUG FlowInternal] identifyPlantFromImageFlow: JSON.stringify SUCCESS. String length: ${outputString.length}. Preview (first 200 chars): ${outputString.substring(0, 200)}`);
+        } catch (e: any) {
+            console.error(`[CRITICAL DEBUG FlowInternal] identifyPlantFromImageFlow: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
+        }
+    }
+    console.log('[DEBUG FlowInternal] identifyPlantFromImageFlow: Preparing to return output.');
     return output;
   }
 );
+

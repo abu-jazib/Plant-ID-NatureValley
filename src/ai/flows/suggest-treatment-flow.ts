@@ -32,20 +32,26 @@ export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): 
   try {
     console.log(`[Flow Action] suggestPlantTreatment: Calling suggestPlantTreatmentFlow.`);
     const result = await suggestPlantTreatmentFlow(input);
-    console.log('[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length:', result?.suggestedSolutions?.length);
 
-    // Attempt to stringify to see if the object itself is an issue for serialization later by Next.js
-    try {
-      const resultString = JSON.stringify(result);
-      console.log(`[Flow Pre-Return Debug] suggestPlantTreatment: Stringified result length: ${resultString.length}. Contents (first 200 chars): ${resultString.substring(0,200)}`);
-    } catch (stringifyError: any) {
-      console.error(`[Flow CRITICAL ERROR] suggestPlantTreatment: Failed to stringify result before returning. Error: ${stringifyError.message}`);
-      // We might still try to return the original result, or re-throw, depending on how critical this is.
-      // For now, log and proceed to return.
+    console.log(`[DEBUG] suggestPlantTreatment: Result obtained from AI flow. Type: ${typeof result}. Null/Undefined check: ${result === null || result === undefined}`);
+    if (result) {
+        console.log(`[DEBUG] suggestPlantTreatment: Result English solutions length: ${result.suggestedSolutions?.length}, Urdu solutions length: ${result.suggestedSolutionsUrdu?.length}`);
+        console.log(`[DEBUG] suggestPlantTreatment: Attempting to JSON.stringify the result object for inspection...`);
+        try {
+            const resultString = JSON.stringify(result);
+            console.log(`[DEBUG] suggestPlantTreatment: JSON.stringify SUCCESS. String length: ${resultString.length}. Preview (first 200 chars): ${resultString.substring(0, 200)}`);
+        } catch (e: any) {
+            console.error(`[CRITICAL DEBUG] suggestPlantTreatment: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
+        }
+    } else {
+        console.error('[CRITICAL DEBUG] suggestPlantTreatment: `result` from suggestPlantTreatmentFlow is null or undefined. Throwing error.');
+        throw new Error('AI flow (suggestPlantTreatmentFlow) returned null or undefined result.');
     }
+    console.log('[Flow Success] suggestPlantTreatment: Flow executed successfully. English solutions length (re-check):', result?.suggestedSolutions?.length);
     
-    console.log('[Flow Return] suggestPlantTreatment: Preparing to return result to client.');
+    console.log('[Flow Return] suggestPlantTreatment: Preparing to return result from server action wrapper.');
     return result;
+
   } catch (error: any) {
     const errorMessage = `[Flow CRITICAL ERROR] suggestPlantTreatment: Execution failed.`;
     console.error(errorMessage);
@@ -60,7 +66,7 @@ export async function suggestPlantTreatment(input: SuggestPlantTreatmentInput): 
     } catch (stringifyError) {
         console.error('[Flow CRITICAL ERROR] Could not stringify full error object. Original error object:', error);
     }
-    throw new Error(`Server-side analysis failed during treatment suggestion. Please check server logs for details.`);
+    throw new Error(`Server-side analysis failed during treatment suggestion. Details: ${error.message}`);
   }
 }
 
@@ -94,6 +100,17 @@ const suggestPlantTreatmentFlow = ai.defineFlow(
     if (!output) {
       throw new Error('AI model did not return an output for treatment suggestion.');
     }
+     // Add detailed logging for output object before returning
+    console.log(`[DEBUG FlowInternal] suggestPlantTreatmentFlow: Output obtained. Type: ${typeof output}. Null/Undefined check: ${output === null || output === undefined}`);
+    if (output) {
+        try {
+            const outputString = JSON.stringify(output);
+            console.log(`[DEBUG FlowInternal] suggestPlantTreatmentFlow: JSON.stringify SUCCESS. String length: ${outputString.length}. Preview (first 200 chars): ${outputString.substring(0, 200)}`);
+        } catch (e: any) {
+            console.error(`[CRITICAL DEBUG FlowInternal] suggestPlantTreatmentFlow: JSON.stringify FAILED. Error: ${e.message}. Stack: ${e.stack}`);
+        }
+    }
+    console.log('[DEBUG FlowInternal] suggestPlantTreatmentFlow: Preparing to return output.');
     return output;
   }
 );

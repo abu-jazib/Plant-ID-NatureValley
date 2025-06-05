@@ -9,6 +9,7 @@ import { ImageUploadSection } from "./ImageUploadSection";
 import { ResultsSection } from "./ResultsSection";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useToast } from "@/hooks/use-toast";
+import { AdSenseUnit } from "@/components/ads/AdSenseUnit"; // Import AdSenseUnit
 
 export function LeafWiseApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -22,10 +23,12 @@ export function LeafWiseApp() {
   const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ur">("en");
   const { toast } = useToast();
 
+  const MAX_IMAGE_SIZE_MB = 1;
+  const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      setFile(selectedFile);
       setError(null);
       setPlantIdResult(null);
       setDiseaseResult(null);
@@ -35,63 +38,68 @@ export function LeafWiseApp() {
       reader.onload = (e) => {
         const originalImageDataUrl = e.target?.result as string;
 
-        if (selectedFile.size > 1024 * 1024) { 
+        // Check file size
+        if (selectedFile.size > MAX_IMAGE_SIZE_BYTES) {
           toast({
             title: "Compressing Image",
-            description: "Image is larger than 1MB, attempting to reduce its size...",
+            description: `Image is larger than ${MAX_IMAGE_SIZE_MB}MB. Compressing before upload...`,
           });
-          const img = new window.Image(); 
+
+          const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_DIMENSION = 1280; 
+            const MAX_DIMENSION = 1280; // Max width or height for resizing
             let { width, height } = img;
 
             if (width > height) {
               if (width > MAX_DIMENSION) {
-                height = Math.round(height * (MAX_DIMENSION / width));
+                height = Math.round((height * MAX_DIMENSION) / width);
                 width = MAX_DIMENSION;
               }
             } else {
               if (height > MAX_DIMENSION) {
-                width = Math.round(width * (MAX_DIMENSION / height));
+                width = Math.round((width * MAX_DIMENSION) / height);
                 height = MAX_DIMENSION;
               }
             }
-
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
-
             if (ctx) {
               ctx.drawImage(img, 0, 0, width, height);
-              const resizedImageDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-              setImageDataUrl(resizedImageDataUrl);
-              
-              const estimatedResizedBlobSize = (resizedImageDataUrl.length * (3/4)); 
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 0.7 quality JPEG
+              setImageDataUrl(compressedDataUrl);
+              setFile(selectedFile); // Keep original file for potential use, or convert to Blob if needed
               toast({
-                title: "Image Compressed",
-                description: `Image size reduced. New approx size: ${(estimatedResizedBlobSize / (1024*1024)).toFixed(2)} MB.`,
+                title: "Compression Complete",
+                description: "Image compressed and ready.",
               });
             } else {
+              // Fallback if canvas context fails
               setImageDataUrl(originalImageDataUrl);
-              toast({ 
-                title: "Compression Failed", 
-                description: "Could not process image for resizing. Using original image.", 
-                variant: "destructive" 
+              setFile(selectedFile);
+              toast({
+                title: "Compression Failed",
+                description: "Using original image. Canvas context error.",
+                variant: "destructive",
               });
             }
           };
           img.onerror = () => {
-            setImageDataUrl(originalImageDataUrl);
-            toast({ 
-              title: "Image Load Error", 
-              description: "Could not load image for processing. Using original image.", 
-              variant: "destructive" 
-            });
+            // Fallback if image loading fails
+             setImageDataUrl(originalImageDataUrl);
+             setFile(selectedFile);
+             toast({
+                title: "Compression Failed",
+                description: "Using original image. Image load error.",
+                variant: "destructive",
+              });
           };
           img.src = originalImageDataUrl;
         } else {
+          // Image is within size limit
           setImageDataUrl(originalImageDataUrl);
+          setFile(selectedFile);
         }
       };
       reader.readAsDataURL(selectedFile);
@@ -100,6 +108,7 @@ export function LeafWiseApp() {
       setImageDataUrl(null);
     }
   };
+
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -138,22 +147,13 @@ export function LeafWiseApp() {
             setCurrentLoadingStep("Suggesting treatment...");
             toast({ title: "Processing...", description: "Generating treatment suggestions." });
             
-            try {
-              const treatmentRes = await suggestPlantTreatment({
-                plantSpecies: idResult.englishIdentification.latinName,
-                diseaseDescription: diseaseRes.likelyCauses,
-                diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
-              });
-              setTreatmentSuggestionResult(treatmentRes);
-              toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
-            } catch (treatmentError: any) {
-              console.error("Error calling suggestPlantTreatment:", treatmentError);
-              const userErrorMessage = treatmentError.message?.includes('network') || treatmentError.message?.includes('fetch') 
-                ? "A network error occurred while fetching treatment suggestions. Please check your connection or try again."
-                : `Error during treatment suggestion: ${treatmentError.message || 'Unknown error'}`;
-              setError(userErrorMessage);
-              toast({ title: "Treatment Suggestion Failed", description: userErrorMessage, variant: "destructive" });
-            }
+            const treatmentRes = await suggestPlantTreatment({
+              plantSpecies: idResult.englishIdentification.latinName,
+              diseaseDescription: diseaseRes.likelyCauses,
+              diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
+            });
+            setTreatmentSuggestionResult(treatmentRes);
+            toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
           } else if (diseaseRes.diseaseDetected && !diseaseRes.likelyCauses) {
              toast({ title: "Info", description: "Disease detected, but no specific causes identified to suggest treatment.", variant: "default" });
           }
@@ -167,10 +167,9 @@ export function LeafWiseApp() {
         toast({ title: "Identification Failed", description: "Essential plant details are missing from the AI response. Please try a clearer image.", variant: "destructive" });
       }
     } catch (err: any) {
-      console.error('Error during LeafWiseApp analysis:', { step: currentLoadingStep, error: err });
-      const errorMessage = err.message || "An unexpected response was received from the server.";
-      setError(`Error during ${currentLoadingStep || 'analysis'}: ${errorMessage}`);
-      toast({ title: "Analysis Failed", description: `Error during ${currentLoadingStep || 'analysis'}: ${errorMessage}`, variant: "destructive" });
+      const errorMessage = `Error during analysis: ${err.message || 'Unknown error'}`;
+      setError(errorMessage);
+      toast({ title: "Analysis Failed", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
       setCurrentLoadingStep(null);
@@ -196,6 +195,15 @@ export function LeafWiseApp() {
         imageDataUrl={imageDataUrl}
         isLoading={isLoading}
       />
+
+      {/* AdSense Ad Unit 1 */}
+      <AdSenseUnit 
+        adClient="ca-pub-2252656502777909" // REPLACE
+        adSlot="2339027729" // REPLACE
+        className="my-6"
+        showAdLabel={true} // Explicitly show label
+      />
+
       <ResultsSection
         plantIdResult={plantIdResult}
         diseaseResult={diseaseResult}
@@ -209,3 +217,4 @@ export function LeafWiseApp() {
     </div>
   );
 }
+

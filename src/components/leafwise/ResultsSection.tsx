@@ -13,6 +13,7 @@ import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Image as ImageIcon, Info, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { AdSenseUnit } from "@/components/ads/AdSenseUnit"; // Import AdSenseUnit
 
 interface ResultsSectionProps {
   plantIdResult: IdentifyPlantFromImageOutput | null;
@@ -22,7 +23,7 @@ interface ResultsSectionProps {
   error: string | null;
   isLoading: boolean;
   currentLoadingStep: string | null;
-  language: "en" | "ur"; // Added language prop
+  language: "en" | "ur";
 }
 
 export function ResultsSection({ 
@@ -33,7 +34,7 @@ export function ResultsSection({
   error, 
   isLoading,
   currentLoadingStep,
-  language // Destructure language prop
+  language
 }: ResultsSectionProps) {
 
   if (isLoading && currentLoadingStep) {
@@ -64,13 +65,13 @@ export function ResultsSection({
      return (
       <Card className="mt-8 shadow-lg">
         <CardHeader>
-          <CardTitle className="text-xl flex items-center font-sans"> {/* Added font-sans */}
+          <CardTitle className="text-xl flex items-center font-sans">
             <Info className="mr-2 text-primary" />
             Awaiting Analysis
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground font-sans"> {/* Added font-sans */}
+          <p className="text-muted-foreground font-sans">
             Upload an image of a plant leaf and click "Analyze Leaf" to get started. 
             We'll identify the plant, check for diseases, and provide suggestions.
           </p>
@@ -105,20 +106,42 @@ export function ResultsSection({
       {(plantIdResult || diseaseResult || treatmentSuggestionResult) && <Separator className="my-6" />}
 
       {plantIdResult && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PlantIdentificationCard
-            englishResult={plantIdResult.englishIdentification}
-            confidence={plantIdResult.confidence}
-            wikiLink={plantIdResult.wikiLink}
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PlantIdentificationCard
+              englishResult={plantIdResult.englishIdentification}
+              confidence={plantIdResult.confidence}
+              wikiLink={plantIdResult.wikiLink}
+            />
+            <PlantIdentificationUrduCard
+              urduResult={plantIdResult.urduIdentification}
+              confidence={plantIdResult.confidence}
+            />
+          </div>
+          {/* AdSense Ad Unit 2 */}
+          <AdSenseUnit 
+            adClient="ca-pub-2252656502777909" // REPLACE
+            adSlot="1025946056" // REPLACE
+            className="my-6"
+            showAdLabel={true} // Explicitly show label
           />
-          <PlantIdentificationUrduCard
-            urduResult={plantIdResult.urduIdentification}
-            confidence={plantIdResult.confidence}
-          />
-        </div>
+        </>
       )}
       
-      {diseaseResult && <DiseaseDetectionCard result={diseaseResult} language={language} />}
+      {diseaseResult && (
+        <>
+          <DiseaseDetectionCard result={diseaseResult} language={language} />
+          {/* AdSense Ad Unit 3: Placed after disease detection, before solution if solution exists */}
+          {treatmentSuggestionResult && diseaseResult.diseaseDetected && (
+            <AdSenseUnit 
+              adClient="ca-pub-2252656502777909" // REPLACE
+              adSlot="7823272783" // REPLACE
+              className="my-6"
+              showAdLabel={true} // Explicitly show label
+            />
+          )}
+        </>
+      )}
       
       {treatmentSuggestionResult && diseaseResult?.diseaseDetected && (
           <DiseaseSolutionCard result={treatmentSuggestionResult} language={language} />
@@ -126,3 +149,4 @@ export function ResultsSection({
     </div>
   );
 }
+

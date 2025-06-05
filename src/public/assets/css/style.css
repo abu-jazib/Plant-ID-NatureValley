@@ -1,35 +1,4 @@
-/*-----------------------------------------------------------------------------------
 
-    Template Name: Gadden - Garden & Landscaping HTML Template
-    Template URI: site.com
-    Description: Gadden is a creative & unique HTML template for Landscaping, Gardening, Groundskeeping, Lawn Services, Florists, Flower Shops and companies that offer related services.
-    Author: WebTend 
-    Author URI: https://webtend.net/
-    Version: 1.0
-
---------------------------
-    CSS INDEX
---------------------------
-
-    01. Common css 
-    02. Header css
-    03. Hero css
-    04. About css
-    05. Features css
-    06. Service css
-    07. Project css
-    08. Gallery css
-    09. Team css
-    10. Testimonial css
-    11. Faqs css
-    12. Pricing css
-    13. Shop css
-    14. Blog css
-    15. Contact css
-    16. Footer css
-    17. Sections css
-    
------------------------------------------------------------------------------------*/
 h1, h2, h3, .hero-content .sub-title, h4, h5, .comments-area .comment .comment-wrap .comment-author-content span.author-name, h6, .main-btn.filled-btn, .btn-link, .hero-slider-two .slick-arrow:hover, .client-quote-box .text h2.number, .sidebar-widget-area .widget-newsletter .sidebar-content .form_control::-webkit-input-placeholder, .sub-title, .btn-link:hover, .header-navigation.breakpoint-on .nav-search .search-btn, .header-one .header-navigation .main-menu ul > li .search-btn, .header-two .header-navigation.sticky .main-menu ul > li > a, .header-two .header-navigation.sticky .nav-right-item .lang-dropdown .nice-select, .header-three .header-navigation .nav-right-item .nice-select ul.list li, .about-two_content-box .about-inner-content .experience-box-two h6, .about-features-item .icon, .circle-logo .inner-circle i, .features-thumb-item .content .icon i, .features-thumb-item .content .icon-btn, .features-thumb-item-two .text .icon i, .single-features-item .icon i, .single-features-item .text h5.title, .features-list li, .single-category-item .icon i, .single-service-item .service-info .icon i, .project-filter li, .single-project-item-three .project-img .icon-btn, .project-details-wrapper .project-info-widget .info-content ul li span, .single-gallery-item .gallery-img .hover-overlay .icon-btn, .team-details-wrapper .member-info .member-meta .member-contact-info p, .team-details-wrapper .member-info .member-meta .member-contact-info ul.social-link li a, .single-pricing-item:hover .pricing-body .pricing-button .main-btn, .product-details-wrapper .product-info .product-meta li span, .product-details-wrapper .product-info ul.social-link li span, .sidebar-widget-area .widget-search form .form_control::-webkit-input-placeholder, .sidebar-widget-area .widget-service-nav ul li a, .sidebar-widget-area .widget-tag-cloud a, .sidebar-widget-area .widget-price-filter .price-number input, .gadden-pagination li a, .single-information-item .icon, .single-info-item.style-three .info span, .single-info-item.style-three .info h4.title, .footer-experience-widget .experience-box-two h2.number, .footer-gallery-widget .gallery-list li a .hover-overlay i {
   color: #0B3D2C; }
 h1, h2, h3, .hero-content .sub-title, h4, h5, .comments-area .comment .comment-wrap .comment-author-content span.author-name, h6, .main-btn.filled-btn, .btn-link, .hero-slider-two .slick-arrow:hover, .client-quote-box .text h2.number, .sidebar-widget-area .widget-newsletter .sidebar-content .form_control:-ms-input-placeholder, .sub-title, .btn-link:hover, .header-navigation.breakpoint-on .nav-search .search-btn, .header-one .header-navigation .main-menu ul > li .search-btn, .header-two .header-navigation.sticky .main-menu ul > li > a, .header-two .header-navigation.sticky .nav-right-item .lang-dropdown .nice-select, .header-three .header-navigation .nav-right-item .nice-select ul.list li, .about-two_content-box .about-inner-content .experience-box-two h6, .about-features-item .icon, .circle-logo .inner-circle i, .features-thumb-item .content .icon i, .features-thumb-item .content .icon-btn, .features-thumb-item-two .text .icon i, .single-features-item .icon i, .single-features-item .text h5.title, .features-list li, .single-category-item .icon i, .single-service-item .service-info .icon i, .project-filter li, .single-project-item-three .project-img .icon-btn, .project-details-wrapper .project-info-widget .info-content ul li span, .single-gallery-item .gallery-img .hover-overlay .icon-btn, .team-details-wrapper .member-info .member-meta .member-contact-info p, .team-details-wrapper .member-info .member-meta .member-contact-info ul.social-link li a, .single-pricing-item:hover .pricing-body .pricing-button .main-btn, .product-details-wrapper .product-info .product-meta li span, .product-details-wrapper .product-info ul.social-link li span, .sidebar-widget-area .widget-search form .form_control:-ms-input-placeholder, .sidebar-widget-area .widget-service-nav ul li a, .sidebar-widget-area .widget-tag-cloud a, .sidebar-widget-area .widget-price-filter .price-number input, .gadden-pagination li a, .single-information-item .icon, .single-info-item.style-three .info span, .single-info-item.style-three .info h4.title, .footer-experience-widget .experience-box-two h2.number, .footer-gallery-widget .gallery-list li a .hover-overlay i {

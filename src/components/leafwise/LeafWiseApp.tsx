@@ -9,7 +9,7 @@ import { ImageUploadSection } from "./ImageUploadSection";
 import { ResultsSection } from "./ResultsSection";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useToast } from "@/hooks/use-toast";
-import { AdSenseUnit } from "@/components/ads/AdSenseUnit"; // Import AdSenseUnit
+import { AdSenseUnit } from "@/components/ads/AdSenseUnit"; 
 
 export function LeafWiseApp() {
   const [file, setFile] = useState<File | null>(null);
@@ -26,6 +26,9 @@ export function LeafWiseApp() {
   const MAX_IMAGE_SIZE_MB = 1;
   const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
+  // Define Ad Slot IDs - REPLACE THESE WITH YOUR ACTUAL SLOT IDs
+  const adSlotMainPageTop = "2339027729"; 
+
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
@@ -38,7 +41,6 @@ export function LeafWiseApp() {
       reader.onload = (e) => {
         const originalImageDataUrl = e.target?.result as string;
 
-        // Check file size
         if (selectedFile.size > MAX_IMAGE_SIZE_BYTES) {
           toast({
             title: "Compressing Image",
@@ -48,7 +50,7 @@ export function LeafWiseApp() {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_DIMENSION = 1280; // Max width or height for resizing
+            const MAX_DIMENSION = 1280; 
             let { width, height } = img;
 
             if (width > height) {
@@ -67,15 +69,14 @@ export function LeafWiseApp() {
             const ctx = canvas.getContext('2d');
             if (ctx) {
               ctx.drawImage(img, 0, 0, width, height);
-              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 0.7 quality JPEG
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); 
               setImageDataUrl(compressedDataUrl);
-              setFile(selectedFile); // Keep original file for potential use, or convert to Blob if needed
+              setFile(selectedFile); 
               toast({
                 title: "Compression Complete",
                 description: "Image compressed and ready.",
               });
             } else {
-              // Fallback if canvas context fails
               setImageDataUrl(originalImageDataUrl);
               setFile(selectedFile);
               toast({
@@ -86,7 +87,6 @@ export function LeafWiseApp() {
             }
           };
           img.onerror = () => {
-            // Fallback if image loading fails
              setImageDataUrl(originalImageDataUrl);
              setFile(selectedFile);
              toast({
@@ -97,7 +97,6 @@ export function LeafWiseApp() {
           };
           img.src = originalImageDataUrl;
         } else {
-          // Image is within size limit
           setImageDataUrl(originalImageDataUrl);
           setFile(selectedFile);
         }
@@ -158,8 +157,33 @@ export function LeafWiseApp() {
              toast({ title: "Info", description: "Disease detected, but no specific causes identified to suggest treatment.", variant: "default" });
           }
         } else {
-          setError("Plant identified, but Latin name is missing. Disease detection skipped.");
-          toast({ title: "Identification Incomplete", description: "Latin name missing, disease detection skipped.", variant: "destructive" });
+          //setError("Plant identified, but Latin name is missing. Disease detection skipped.");
+          //toast({ title: "Identification Incomplete", description: "Latin name missing, disease detection skipped.", variant: "destructive" });
+          console.warn("Plant identified, but Latin name is missing. Disease detection may be less accurate or skipped.");
+           // Proceed with disease detection even if Latin name is missing, but acknowledge it may be less accurate.
+           setCurrentLoadingStep("Detecting diseases (Latin name missing)...");
+           toast({ title: "Processing...", description: "Detecting diseases (Latin name might be missing, proceeding with common name if available)." });
+           const diseaseRes = await detectDiseaseFromImage({
+             leafImageDataUri: imageDataUrl,
+             // Use common name as a fallback if Latin name is absent
+             plantSpecies: idResult.englishIdentification.latinName || idResult.englishIdentification.commonName, 
+           });
+           setDiseaseResult(diseaseRes);
+           toast({ title: "Disease Scan Complete!", description: diseaseRes.diseaseDetected ? "Potential issues found." : "Looks healthy!"});
+ 
+           if (diseaseRes.diseaseDetected && diseaseRes.likelyCauses) {
+             setCurrentLoadingStep("Suggesting treatment...");
+             toast({ title: "Processing...", description: "Generating treatment suggestions." });
+             const treatmentRes = await suggestPlantTreatment({
+               plantSpecies: idResult.englishIdentification.latinName || idResult.englishIdentification.commonName,
+               diseaseDescription: diseaseRes.likelyCauses,
+               diseaseDescriptionUrdu: diseaseRes.likelyCausesUrdu,
+             });
+             setTreatmentSuggestionResult(treatmentRes);
+             toast({ title: "Suggestions Ready!", description: "Treatment and prevention advice generated."});
+           } else if (diseaseRes.diseaseDetected && !diseaseRes.likelyCauses) {
+              toast({ title: "Info", description: "Disease detected, but no specific causes identified to suggest treatment.", variant: "default" });
+           }
         }
       } else {
         setPlantIdResult(idResult); 
@@ -168,6 +192,7 @@ export function LeafWiseApp() {
       }
     } catch (err: any) {
       const errorMessage = `Error during analysis: ${err.message || 'Unknown error'}`;
+      console.error("Analysis handleSubmit error:", err);
       setError(errorMessage);
       toast({ title: "Analysis Failed", description: errorMessage, variant: "destructive" });
     } finally {
@@ -196,12 +221,12 @@ export function LeafWiseApp() {
         isLoading={isLoading}
       />
 
-      {/* AdSense Ad Unit 1 */}
       <AdSenseUnit 
-        adClient="ca-pub-2252656502777909" // REPLACE
-        adSlot="2339027729" // REPLACE
+        key={adSlotMainPageTop} // Add unique key
+        adClient="ca-pub-2252656502777909" 
+        adSlot={adSlotMainPageTop} 
         className="my-6"
-        showAdLabel={true} // Explicitly show label
+        showAdLabel={true}
       />
 
       <ResultsSection
@@ -217,4 +242,3 @@ export function LeafWiseApp() {
     </div>
   );
 }
-

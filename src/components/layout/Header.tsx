@@ -19,7 +19,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="w-full bg-primary text-primary-foreground shadow-md sticky top-0 z-50 font-sans">
+    <header className="w-full bg-primary text-primary-foreground shadow-md top-0 z-50 font-sans">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <Link href="/" className="flex items-center">
           <NatureValleyLogoIcon className="h-10 w-auto text-primary-foreground" />

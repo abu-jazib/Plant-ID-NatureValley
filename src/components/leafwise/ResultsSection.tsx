@@ -13,7 +13,7 @@ import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Image as ImageIcon, Info, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { AdSenseUnit } from "@/components/ads/AdSenseUnit"; // Import AdSenseUnit
+import { AdSenseUnit } from "@/components/ads/AdSenseUnit"; 
 
 interface ResultsSectionProps {
   plantIdResult: IdentifyPlantFromImageOutput | null;
@@ -36,6 +36,10 @@ export function ResultsSection({
   currentLoadingStep,
   language
 }: ResultsSectionProps) {
+
+  // Define Ad Slot IDs - REPLACE THESE WITH YOUR ACTUAL SLOT IDs
+  const adSlotResults1 = "7823272783";
+  const adSlotResults2 = "1025946056";
 
   if (isLoading && currentLoadingStep) {
     return (
@@ -118,12 +122,12 @@ export function ResultsSection({
               confidence={plantIdResult.confidence}
             />
           </div>
-          {/* AdSense Ad Unit 2 */}
           <AdSenseUnit 
-            adClient="ca-pub-2252656502777909" // REPLACE
-            adSlot="1025946056" // REPLACE
+            key={adSlotResults1} // Add unique key
+            adClient="ca-pub-2252656502777909" 
+            adSlot={adSlotResults1} 
             className="my-6"
-            showAdLabel={true} // Explicitly show label
+            showAdLabel={true}
           />
         </>
       )}
@@ -131,13 +135,13 @@ export function ResultsSection({
       {diseaseResult && (
         <>
           <DiseaseDetectionCard result={diseaseResult} language={language} />
-          {/* AdSense Ad Unit 3: Placed after disease detection, before solution if solution exists */}
           {treatmentSuggestionResult && diseaseResult.diseaseDetected && (
             <AdSenseUnit 
-              adClient="ca-pub-2252656502777909" // REPLACE
-              adSlot="7823272783" // REPLACE
+              key={adSlotResults2} // Add unique key
+              adClient="ca-pub-2252656502777909" 
+              adSlot={adSlotResults2} 
               className="my-6"
-              showAdLabel={true} // Explicitly show label
+              showAdLabel={true}
             />
           )}
         </>
@@ -149,4 +153,3 @@ export function ResultsSection({
     </div>
   );
 }
-

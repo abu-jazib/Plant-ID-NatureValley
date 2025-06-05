@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -20,27 +20,62 @@ interface AdSenseUnitProps {
   showAdLabel?: boolean; // New prop to control visibility of "Advertisement" label
 }
 
+// This Set will track ad slots for which .push() has been called in the current session.
+// It's defined outside the component to persist across re-renders of AdSenseUnit instances.
+const adSlotsInitializedThisSession = new Set<string>();
+
 export const AdSenseUnit: React.FC<AdSenseUnitProps> = ({
   adClient,
   adSlot,
   adFormat = "auto",
   responsive = true,
   className,
-  style = { display: 'block' }, // Removed textAlign: 'center' for the main div
+  style = { display: 'block' },
   layoutKey,
-  showAdLabel = true, // Default to true
+  showAdLabel = true,
 }) => {
+  const insRef = useRef<HTMLModElement>(null);
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-      } catch (e) {
-        console.error("AdSense push error:", e);
+    const adElement = insRef.current;
+
+    // Ensure the ad element is in the DOM and AdSense script is available
+    if (!adElement || typeof window.adsbygoogle === 'undefined') {
+      return;
+    }
+
+    // Check 1: See if AdSense has already marked this specific <ins> element as filled or done.
+    // This is the most direct indicator from AdSense itself.
+    const adSenseTagStatus = adElement.getAttribute('data-ad-status');
+    if (adSenseTagStatus === 'filled' || adSenseTagStatus === 'done') {
+      adSlotsInitializedThisSession.add(adSlot); // Ensure our session tracker knows
+      return;
+    }
+
+    // Check 2: See if our session tracker already knows we've tried to push this slot.
+    // This helps prevent re-pushes if the component re-renders or Strict Mode calls useEffect twice
+    // before AdSense updates data-ad-status.
+    if (adSlotsInitializedThisSession.has(adSlot)) {
+      return;
+    }
+
+    // If neither of the above, attempt to initialize the ad.
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      // Mark this slot as having had .push() called for it in this session.
+      adSlotsInitializedThisSession.add(adSlot);
+    } catch (e: any) {
+      console.error(`AdSense push error for slot ${adSlot}:`, e);
+      // If the specific error is that all ins elements are already processed,
+      // then AdSense believes it's done. We should mark our slot as initialized
+      // to prevent our code from retrying in this session.
+      if (e && e.message && e.message.includes("All 'ins' elements in the DOM with class=adsbygoogle already have ads in them")) {
+        adSlotsInitializedThisSession.add(adSlot);
       }
     }
-  }, [adClient, adSlot, adFormat, layoutKey]); // Re-run if these key props change
+  }, [adClient, adSlot, adFormat, responsive, layoutKey]); // Dependencies for the effect
 
-  const isDevelopmentPlaceholder = process.env.NODE_ENV === 'development' && (!adClient || !adSlot);
+  const isDevelopmentPlaceholder = process.env.NODE_ENV === 'development' && (!adClient || !adSlot || adClient.includes("YOUR_PUBLISHER_ID") || adSlot.includes("YOUR_AD_SLOT_ID"));
 
   if (isDevelopmentPlaceholder) {
     return (
@@ -63,16 +98,18 @@ export const AdSenseUnit: React.FC<AdSenseUnitProps> = ({
         }}
       >
         <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>Ad Placeholder</p>
-        <p>Ad Client: {adClient || 'MISSING'}</p>
-        <p>Ad Slot: {adSlot || 'MISSING'}</p>
-        <p style={{marginTop: '4px', fontStyle: 'italic'}}>(This message is visible in development mode)</p>
+        <p>Ad Client: {adClient.includes("YOUR_PUBLISHER_ID") ? "MISSING (Please update in code)" : adClient}</p>
+        <p>Ad Slot: {adSlot.includes("YOUR_AD_SLOT_ID") ? "MISSING (Please update in code)" : adSlot}</p>
+        <p style={{marginTop: '4px', fontStyle: 'italic'}}>(This message is visible in development mode or if placeholders are used)</p>
       </div>
     );
   }
   
-  // If props are missing in production, don't render anything
-  if (!adClient || !adSlot) {
-    return null;
+  if (!adClient || !adSlot || adClient.includes("YOUR_PUBLISHER_ID") || adSlot.includes("YOUR_AD_SLOT_ID")) {
+    if (process.env.NODE_ENV === 'production') {
+        console.warn(`AdSenseUnit: adClient or adSlot is using placeholder values in production for slot: ${adSlot}. Ad will not be rendered.`);
+        return null; 
+    }
   }
 
   return (
@@ -83,15 +120,15 @@ export const AdSenseUnit: React.FC<AdSenseUnitProps> = ({
         </p>
       )}
       <ins
+        ref={insRef}
         className="adsbygoogle"
-        style={{ display: 'block', margin: '0 auto' }} // Ensure ad itself is centered
+        style={{ display: 'block', margin: '0 auto' }}
         data-ad-client={adClient}
         data-ad-slot={adSlot}
         data-ad-format={adFormat}
         data-full-width-responsive={responsive ? "true" : "false"}
-        data-ad-layout-key={layoutKey} // Add layout key if provided
+        data-ad-layout-key={layoutKey}
       />
     </div>
   );
 };
-
